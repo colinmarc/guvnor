@@ -3,7 +3,9 @@ import pyuv
 import signal
 
 class Watcher(object):
-	def __init__(self, greenlet):
+	def __init__(self, greenlet=None):
+		if not greenlet:
+			greenlet = getcurrent()
 		self.greenlet = greenlet
 	
 	def __call__(self, *args, **kwargs):
@@ -32,6 +34,8 @@ class Guvnor(object):
 	def __init__(self):
 		self.loop = pyuv.Loop()
 		self.greenlet = greenlet(self._run)
+
+		self.dns = pyuv.dns.DNSResolver(self.loop)
 
 		#TODO: benchmark idle vs prepare vs check (depth first vs breadth first)
 		self.prepare_handler = pyuv.Idle(self.loop)
@@ -65,7 +69,7 @@ guvnor = Guvnor()
 main = getcurrent()
 
 def sleep(secs):
-	watcher = Watcher(getcurrent())
+	watcher = Watcher()
 	timer = pyuv.Timer(guvnor.loop)
 	timer.start(watcher, float(secs), 0)
 	guvnor.switch()
